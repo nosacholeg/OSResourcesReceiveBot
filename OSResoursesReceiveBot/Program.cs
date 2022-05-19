@@ -1,6 +1,5 @@
-﻿using System;
-using System.Management;
-using System.Runtime.Versioning;
+﻿using System.Management;
+using System.Diagnostics;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
@@ -50,7 +49,10 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
     if (messageText == "/start") return;
     if (messageText == "/getdata")
     {
-        await botClient.SendTextMessageAsync(chatId: chatId, text: GetData(), cancellationToken: cancellationToken);
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        await botClient.SendTextMessageAsync(chatId: chatId, text: GetCPUData(), cancellationToken: cancellationToken);
+        stopwatch.Stop();
+        Console.WriteLine("sent info in " + Math.Round(stopwatch.Elapsed.TotalSeconds, 3).ToString() + " seconds");
         return;
     }
 
@@ -71,10 +73,41 @@ Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, 
     return Task.CompletedTask;
 }
 
-string GetData()
+string GetCPUData()
 {
-    string data = "";
-    data += GetResultString("Процессор:\n", GetInfo("Win32_Processor", "Name"));
+    ManagementObjectSearcher searcher = new("SELECT * FROM Win32_Processor");
+    string data = "Информация о процессоре:\n";
+    data += GetResultString("Имя процессора:\n", GetInfo(searcher, "Name"));
+    data += GetResultString("Описание:\n", GetInfo(searcher, "Description"));
+    data += GetResultString("Имя устройства:\n", GetInfo(searcher, "SystemName"));
+    data += GetResultString("Разрядность системы:", GetInfo(searcher, "AddressWidth"));
+    
+    data += "Архитектура процессора:";
+    /*Определение архитектуры процессора*/{
+        string str = GetResultString("", GetInfo(searcher, "Architecture"));
+        switch (str.Replace("\n", ""))
+        {
+            case "0": data += "x86"; break;
+            case "1": data += "MIPS"; break;
+            case "2": data += "Alpha"; break;
+            case "3": data += "PowerPC"; break;
+            case "5": data += "ARM"; break;
+            case "6": data += "ia64"; break;
+            case "9": data += "x64"; break;
+            case "12": data += "ARM64"; break;
+        }
+    }/*Определение архитектуры процессора*/
+    data += "\n";
+    data += GetResultString("Количество ядер:", GetInfo(searcher, "NumberOfCores"));
+    data += GetResultString("Количество потоков:", GetInfo(searcher, "ThreadCount"));
+
+    
+    List<string> list = new();
+    list = GetInfo(searcher, "CurrentClockSpeed");
+    data += "Текущая частота процессора:" + Convert.ToDouble(list[0]) / 1000 + "GHz\n";
+    list = GetInfo(searcher, "MaxClockSpeed");
+    data += "Макс. частота процессора:" + Convert.ToDouble(list[0]) / 1000 + "GHz\n";
+    
     return data;
 }
 
@@ -85,16 +118,13 @@ static string GetResultString(string info, List<string> result)
 
     if (result.Count > 0)
     {
-        for (int i = 0; i < result.Count; ++i) data += result[i];
+        for (int i = 0; i < result.Count; ++i) data += result[i] + '\n';
     }
     return data;
 }
-static List<string> GetInfo(string device, string property)
+static List<string> GetInfo(ManagementObjectSearcher searcher, string property)
 {
     List<string> result = new();
-
-    ManagementObjectSearcher searcher = new("SELECT * FROM " + device);
-
     try
     {
         foreach (ManagementObject obj in searcher.Get())
