@@ -62,6 +62,9 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         await botClient.SendTextMessageAsync(chatId: chatId, text: GetCPUData(), cancellationToken: cancellationToken);
+        await botClient.SendTextMessageAsync(chatId: chatId, text: GetVideoData(), cancellationToken: cancellationToken);
+        await botClient.SendTextMessageAsync(chatId: chatId, text: GetMemoryData(), cancellationToken: cancellationToken);
+        await botClient.SendTextMessageAsync(chatId: chatId, text: GetRAMData(), cancellationToken: cancellationToken);
         stopwatch.Stop();
         Console.WriteLine("sent info in " + Math.Round(stopwatch.Elapsed.TotalSeconds, 3).ToString() + " seconds");
         return;
@@ -193,6 +196,62 @@ string GetMemoryData()
     }
     return info;
 }
+
+string GetRAMData()
+{
+    string info = "Информация об оперативной памяти:\n";
+    ManagementObjectSearcher searcher = new("SELECT * FROM Win32_PhysicalMemory");
+    int count = GetInfo(searcher, "Name").Count;
+    string[] data = new string[count];
+
+    for (int i = 0; i < count; i++)
+    {
+        data[i] = "\nИнформация о модуле памяти " + (i + 1) + ":\n";
+        data[i] += "Тэг модуля памяти: " + GetInfo(searcher, "Tag")[i] + '\n';
+        data[i] += "Емкость модуля памяти: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "Capacity")[i]) / 1024 / 1024 / 1024) + "Gb" + '\n';
+        data[i] += "Скорость модуля памяти: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "Speed")[i]) / 1000, 1) + "GHz" + '\n';
+        data[i] += "Изготовитель: " + GetInfo(searcher, "Manufacturer")[i] + '\n';
+
+        data[i] += "Тип физической памяти: ";
+        switch (Convert.ToInt16(GetInfo(searcher, "MemoryType")[i]))
+        {
+            case 0: data[i] += "Неизвестно"; break;
+            case 1: data[i] += "Другое"; break;
+            case 2: data[i] += "DRAM"; break;
+            case 3: data[i] += "Синхронный DRAM"; break;
+            case 4: data[i] += "Кэш DRAM"; break;
+            case 5: data[i] += "EDO"; break;
+            case 6: data[i] += "EDRAM"; break;
+            case 7: data[i] += "VRAM"; break;
+            case 8: data[i] += "SRAM"; break;
+            case 9: data[i] += "ОЗУ"; break;
+            case 10: data[i] += "РОМ"; break;
+            case 11: data[i] += "Flash"; break;
+            case 12: data[i] += "EEPROM"; break;
+            case 13: data[i] += "FEPROM"; break;
+            case 14: data[i] += "EPROM"; break;
+            case 15: data[i] += "CDRAM"; break;
+            case 16: data[i] += "3DRAM"; break;
+            case 17: data[i] += "SDRAM"; break;
+            case 18: data[i] += "SGRAM"; break;
+            case 19: data[i] += "RDRAM"; break;
+            case 20: data[i] += "DDR"; break;
+            case 21: data[i] += "DDR2"; break;
+            case 22: data[i] += "DDR2 FB-DIMM"; break;
+            case 24: data[i] += "DDR3"; break;
+            case 25: data[i] += "FBD2"; break;
+            case 26: data[i] += "DDR4"; break;
+        }
+        data[i] += "\n";
+    }
+
+    for (int i = 0; i < count; i++)
+    {
+        info += data[i];
+    }
+    return info;
+}
+
 static string GetResultString(string info, List<string> result)
 {
     string data = "";
