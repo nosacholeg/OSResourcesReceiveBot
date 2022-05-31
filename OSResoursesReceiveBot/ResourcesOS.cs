@@ -1,9 +1,16 @@
 ﻿using System.Management;
 
-namespace OSResoursesReceiveBot
+namespace OSResourcesReceiveBot
 {
-    internal class ResoursesOS
+    /// <summary>
+    /// Класс для получения ресурсов хостовой ОС
+    /// </summary>
+    class ResourcesOS
     {
+        /// <summary>
+        /// Метод для получения информации об ОС
+        /// </summary>
+        /// <returns>Информация об ОС</returns>
         public static string GetOSData()
         {
             string data = "Информация об ОС:\n";
@@ -13,41 +20,55 @@ namespace OSResoursesReceiveBot
             return data;
         }
 
+        /// <summary>
+        /// Метод для получения информации о центральном процессоре
+        /// </summary>
+        /// <returns>Информация о центральном процессоре</returns>
         public static string GetCPUData()
         {
             ManagementObjectSearcher searcher = new("SELECT * FROM Win32_Processor");
-            string data = "Информация о процессоре:\n";
-            data += GetResultString("Имя процессора:\n", GetInfo(searcher, "Name"));
-            data += GetResultString("Описание:\n", GetInfo(searcher, "Description"));
+            string info = "Информация о процессорах:\n";
 
-            data += "Архитектура процессора:";
-            /*Определение архитектуры процессора*/
+            int count = GetInfo(searcher, "Name").Count;
+            string[] data = new string[count];
+
+            for (int i = 0; i < count; i++)
             {
-                string str = GetResultString("", GetInfo(searcher, "Architecture"));
-                switch (str.Replace("\n", ""))
+                data[i] += "\nПроцессор: " + (i + 1) + "\n";
+                data[i] += "Имя процессора:\n" + GetInfo(searcher, "Name")[i] + "\n";
+                data[i] += "Описание:\n" + GetInfo(searcher, "Description")[i] + "\n";
+                data[i] += "Архитектура процессора: ";
+                string str = GetInfo(searcher, "Architecture")[i];
+                switch (str)
                 {
-                    case "0": data += "x86"; break;
-                    case "1": data += "MIPS"; break;
-                    case "2": data += "Alpha"; break;
-                    case "3": data += "PowerPC"; break;
-                    case "5": data += "ARM"; break;
-                    case "6": data += "ia64"; break;
-                    case "9": data += "x64"; break;
-                    case "12": data += "ARM64"; break;
+                    case "0": data[i] += "x86"; break;
+                    case "1": data[i] += "MIPS"; break;
+                    case "2": data[i] += "Alpha"; break;
+                    case "3": data[i] += "PowerPC"; break;
+                    case "5": data[i] += "ARM"; break;
+                    case "6": data[i] += "ia64"; break;
+                    case "9": data[i] += "x64"; break;
+                    case "12": data[i] += "ARM64"; break;
                 }
-            }/*Определение архитектуры процессора*/
-            data += "\n";
-            data += GetResultString("Количество ядер:", GetInfo(searcher, "NumberOfCores"));
-            data += GetResultString("Количество потоков:", GetInfo(searcher, "ThreadCount"));
-            
-            List<string> list = GetInfo(searcher, "CurrentClockSpeed");
-            data += "Текущая частота процессора:" + Convert.ToDouble(list[0]) / 1000 + "GHz\n";
-            list = GetInfo(searcher, "MaxClockSpeed");
-            data += "Макс. частота процессора:" + Convert.ToDouble(list[0]) / 1000 + "GHz\n";
+                data[i] += "\n";
+                data[i] += "Количество ядер:"+ GetInfo(searcher, "NumberOfCores")[i] + "\n";
+                data[i] += "Количество потоков:"+ GetInfo(searcher, "ThreadCount")[i] + "\n";
+                data[i] += "Текущая частота процессора:" + Convert.ToDouble(GetInfo(searcher, "CurrentClockSpeed")[i]) / 1000 + "GHz\n";
+                data[i] += "Макс. частота процессора:" + Convert.ToDouble(GetInfo(searcher, "MaxClockSpeed")[i]) / 1000 + "GHz\n";
+            }
 
-            return data;
+            for (int i = 0; i < count; i++)
+            {
+                info += data[i];
+            }
+
+            return info;
         }
-
+        
+        /// <summary>
+        /// Метод для получения информации о графическом процессоре
+        /// </summary>
+        /// <returns>Информация о графическом процессоре</returns>
         public static string GetVideoData()
         {
             string info = "Информация о видеоадаптерах\n";
@@ -55,7 +76,7 @@ namespace OSResoursesReceiveBot
 
             info += "Текущее разрешение:" + GetInfo(searcher, "CurrentHorizontalResolution")[0];
             info += "x" + GetInfo(searcher, "CurrentVerticalResolution")[0] + '\n';
-            info += GetResultString("Битов на пиксель: ", GetInfo(searcher, "CurrentBitsPerPixel"));
+            info += "Битов на пиксель: " + GetInfo(searcher, "CurrentBitsPerPixel")[0] + '\n';
             info += "Количество цветов: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "CurrentNumberOfColors")[0]) / 1_000_000_000, 1) + " млрд\n";
             int count = GetInfo(searcher, "Name").Count;
             string[] data = new string[count];
@@ -63,7 +84,6 @@ namespace OSResoursesReceiveBot
             for (int i = 0; i < count; i++)
             {
                 data[i] = "\nИнформация о видеоадаптере " + (i + 1) + ":\n";
-
                 data[i] += "Имя процессора:\n" + GetInfo(searcher, "Name")[i] + '\n';
                 data[i] += "Версия драйвера:\n" + GetInfo(searcher, "DriverVersion")[i] + '\n';
                 data[i] += "Размер памяти видеоадаптера: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "AdapterRAM")[i]) / 1024 / 1024 / 1024) + "Gb" + '\n';
@@ -94,15 +114,31 @@ namespace OSResoursesReceiveBot
             return info;
         }
 
+        /// <summary>
+        /// Метод для получения информации о накопителе
+        /// </summary>
+        /// <returns>Информация о накопителе</returns>
         public static string GetMemoryData()
         {
-            string info = "Информация о памяти:\n\n";
+            string info = "Информация о памяти:\n";
             ManagementObjectSearcher searcher = new("SELECT * FROM Win32_DiskDrive");
-            info += GetResultString("Имя модуля памяти:\n", GetInfo(searcher, "Caption"));
-            info += GetResultString("Описание:\n", GetInfo(searcher, "Description"));
-            info += "Размер накопителя: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "Size")[0]) / 1024 / 1024 / 1024) + "Gb\n";
-            info += GetResultString("Тип интерфейса:", GetInfo(searcher, "InterfaceType"));
-            info += GetResultString("Тип носителя:\n", GetInfo(searcher, "MediaType"));
+
+            int count = GetInfo(searcher, "Caption").Count;
+            string[] data = new string[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                data[i] += "\nИмя модуля памяти:\n" + GetInfo(searcher, "Caption")[i];
+                data[i] += "Описание:\n" + GetInfo(searcher, "Description")[i];
+                data[i] += "Размер накопителя: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "Size")[i]) / 1024 / 1024 / 1024) + "Gb\n";
+                data[i] += "Тип интерфейса:" + GetInfo(searcher, "InterfaceType")[i];
+                data[i] += "Тип носителя:\n" + GetInfo(searcher, "MediaType")[i];
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                info += data[i];
+            }
 
             info += "\nИнформация о разделах:";
             DriveInfo[] drives = DriveInfo.GetDrives();
@@ -120,6 +156,10 @@ namespace OSResoursesReceiveBot
             return info;
         }
 
+        /// <summary>
+        /// Метод для получения информации об оперативной(физической) памяти
+        /// </summary>
+        /// <returns>Информация об оперативной памяти</returns>
         public static string GetRAMData()
         {
             string info = "Информация об оперативной памяти:\n";
@@ -175,17 +215,12 @@ namespace OSResoursesReceiveBot
             return info;
         }
 
-        private static string GetResultString(string info, List<string> result)
-        {
-            string data = "";
-            if (info.Length > 0) data += info;
-
-            if (result.Count > 0)
-            {
-                for (int i = 0; i < result.Count; ++i) data += result[i] + '\n';
-            }
-            return data;
-        }
+        /// <summary>
+        /// Метод для получение свойств для чтения из выборки класса
+        /// </summary>
+        /// <param name="searcher">Класс</param>
+        /// <param name="property">Искомое свойство</param>
+        /// <returns>Список свойств</returns>
         private static List<string> GetInfo(ManagementObjectSearcher searcher, string property)
         {
             List<string> result = new();
