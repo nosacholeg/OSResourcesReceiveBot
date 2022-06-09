@@ -51,6 +51,7 @@ namespace OSResourcesReceiveBot
                     case "12": data[i] += "ARM64"; break;
                 }
                 data[i] += "\n";
+                data[i] += "Роль: " + GetInfo(searcher, "Role")[i] + "\n";
                 data[i] += "Количество ядер:"+ GetInfo(searcher, "NumberOfCores")[i] + "\n";
                 data[i] += "Количество потоков:"+ GetInfo(searcher, "ThreadCount")[i] + "\n";
                 data[i] += "Текущая частота процессора:" + Convert.ToDouble(GetInfo(searcher, "CurrentClockSpeed")[i]) / 1000 + "GHz\n";
@@ -128,10 +129,10 @@ namespace OSResourcesReceiveBot
 
             for (int i = 0; i < count; i++)
             {
-                data[i] += "\nИмя модуля памяти:\n" + GetInfo(searcher, "Caption")[i];
-                data[i] += "Описание:\n" + GetInfo(searcher, "Description")[i];
+                data[i] += "\nИмя модуля памяти:\n" + GetInfo(searcher, "Caption")[i] + "\n";
+                data[i] += "Описание:\n" + GetInfo(searcher, "Description")[i] + "\n";
                 data[i] += "Размер накопителя: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "Size")[i]) / 1024 / 1024 / 1024) + "Gb\n";
-                data[i] += "Тип интерфейса:" + GetInfo(searcher, "InterfaceType")[i];
+                data[i] += "Тип интерфейса:" + GetInfo(searcher, "InterfaceType")[i] + "\n";
                 data[i] += "Тип носителя:\n" + GetInfo(searcher, "MediaType")[i];
             }
 
@@ -172,7 +173,7 @@ namespace OSResourcesReceiveBot
                 data[i] = "\nИнформация о модуле памяти " + (i + 1) + ":\n";
                 data[i] += "Тэг модуля памяти: " + GetInfo(searcher, "Tag")[i] + '\n';
                 data[i] += "Емкость модуля памяти: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "Capacity")[i]) / 1024 / 1024 / 1024) + "Gb" + '\n';
-                data[i] += "Скорость модуля памяти: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "Speed")[i]) / 1000, 1) + "GHz" + '\n';
+                data[i] += "Скорость модуля памяти: " + Math.Round(Convert.ToDouble(GetInfo(searcher, "ConfiguredClockSpeed")[i]) / 1000, 1) + "GHz" + '\n';
                 data[i] += "Изготовитель: " + GetInfo(searcher, "Manufacturer")[i] + '\n';
 
                 data[i] += "Тип физической памяти: ";
